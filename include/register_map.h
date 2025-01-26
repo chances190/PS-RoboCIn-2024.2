@@ -168,11 +168,18 @@
 // Sensor Measurements To Load In FIFO Register
 //----------------------------------------------
 #define TEMP_FIFO_EN  0x80
-#define GYRO_FIFO_EN  0x70
+#define G_FIFO_EN     0x70
 #define ACCEL_FIFO_EN 0x08
 #define SLV2_FIFO_EN  0x04
 #define SLV1_FIFO_EN  0x02
 #define SLV0_FIFO_EN  0x01
+
+// -------------------------
+// Interrupt Configuration
+// -------------------------
+#define FIFO_OFLOW_EN  0x10
+#define I2C_MST_INT_EN 0x08
+#define DATA_RDY_EN    0x01
 
 //---------------------------
 // Signal Path Reset Values
