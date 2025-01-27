@@ -1,3 +1,5 @@
+#include "main.h"
+
 #include "mbed.h"
 #include "register_map.h"
 
@@ -31,12 +33,6 @@ int read_data(uint8_t reg, char *data, size_t length) {
 
 	return 0;
 }
-
-struct gyro_raw {
-	int16_t x;
-	int16_t y;
-	int16_t z;
-};
 
 // Read raw gyroscope data
 void read_gyro_data(gyro_raw &out) {
@@ -78,16 +74,16 @@ int read_fifo(gyro_raw *out) {
 	return count / sizeof(gyro_raw);
 }
 
-void read_g_test_data(uint8_t (&g_test)[3], gyro_raw &gyro_data) {
+void read_g_test_data(uint8_t (&g_tests)[3], gyro_raw &gyro_data) {
 	write_register(GYRO_CONFIG_REG, G_ST_ON);  // Enable self-test
 	thread_sleep_for(100);  // Allow sensor to stabilize in self-test mode
 	char self_test[3];
 	read_data(SELF_TEST_X_REG, self_test, sizeof(self_test));  // Read SELF_TEST_XYZ data
 
 	// Bitmask SELF_TEST_XYZ[4:0] to get XYZG_TEST
-	g_test[0] = static_cast<uint8_t>(self_test[0]) & 0b00011111;
-	g_test[1] = static_cast<uint8_t>(self_test[1]) & 0b00011111;
-	g_test[2] = static_cast<uint8_t>(self_test[2]) & 0b00011111;
+	g_tests[0] = static_cast<uint8_t>(self_test[0]) & 0b00011111;
+	g_tests[1] = static_cast<uint8_t>(self_test[1]) & 0b00011111;
+	g_tests[2] = static_cast<uint8_t>(self_test[2]) & 0b00011111;
 
 	read_gyro_data(gyro_data);  // Read Gyroscope output data with Self-Test ON
 	write_register(GYRO_CONFIG_REG, G_ST_OFF);  // Disable self-test
@@ -173,12 +169,6 @@ int initialize() {
 	return 0;
 }
 
-struct gyro_rad_s {
-	float x;
-	float y;
-	float z;
-};
-
 inline float deg_to_rad(float deg) {
 	return deg * (M_PI / 180.0f);
 }
@@ -210,17 +200,11 @@ void process_gyro_data(const gyro_raw &in, const int fs_range, const gyro_raw of
 	out.z = deg_to_rad((in.z - offsets.z) / lsb_sensitivity);
 }
 
-struct gyro_angle {
-	float x;
-	float y;
-	float z;
-};
-
 // Integrate gyroscope data to find the angle
-void integrate_gyro_data(const gyro_rad_s &gyro_data, const float dt, gyro_angle &angle) {
-	angle.x += gyro_data.x * dt;
-	angle.y += gyro_data.y * dt;
-	angle.z += gyro_data.z * dt;
+void integrate_gyro_data(const gyro_rad_s &in, const float dt, gyro_angle &out) {
+	out.x += in.x * dt;
+	out.y += in.y * dt;
+	out.z += in.z * dt;
 }
 
 void calibrate(gyro_raw &offsets) {
